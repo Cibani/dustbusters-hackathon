@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 220 30% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 15%;
+
+    --primary: 220 60% 28%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 25% 93%;
+    --secondary-foreground: 220 40% 20%;
+
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 200 70% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 220 60% 28%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 220 40% 18%;
+    --sidebar-foreground: 210 30% 90%;
+    --sidebar-primary: 200 70% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 35% 25%;
+    --sidebar-accent-foreground: 210 30% 95%;
+    --sidebar-border: 220 30% 25%;
+    --sidebar-ring: 200 70% 55%;
+
+    /* AQI colors */
+    --aqi-good: 142 76% 36%;
+    --aqi-moderate: 45 93% 47%;
+    --aqi-unhealthy-sensitive: 25 95% 53%;
+    --aqi-unhealthy: 0 84% 60%;
+    --aqi-very-unhealthy: 280 68% 40%;
+    --aqi-hazardous: 0 63% 31%;
+    --aqi-severe: 0 90% 40%;
+
+    /* Status */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 45 93% 47%;
+    --warning-foreground: 220 30% 15%;
+    --info: 200 70% 45%;
+    --info-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 222 30% 8%;
+    --foreground: 210 30% 92%;
+
+    --card: 222 25% 12%;
+    --card-foreground: 210 30% 92%;
+
+    --popover: 222 25% 12%;
+    --popover-foreground: 210 30% 92%;
+
+    --primary: 200 70% 55%;
+    --primary-foreground: 220 40% 10%;
+
+    --secondary: 220 25% 18%;
+    --secondary-foreground: 210 30% 85%;
+
+    --muted: 220 20% 16%;
+    --muted-foreground: 215 16% 60%;
+
+    --accent: 200 70% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 200 70% 55%;
+
+    --sidebar-background: 222 30% 6%;
+    --sidebar-foreground: 210 30% 85%;
+    --sidebar-primary: 200 70% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 25% 14%;
+    --sidebar-accent-foreground: 210 30% 90%;
+    --sidebar-border: 222 20% 16%;
+    --sidebar-ring: 200 70% 55%;
+
+    --aqi-good: 142 76% 36%;
+    --aqi-moderate: 45 93% 47%;
+    --aqi-unhealthy-sensitive: 25 95% 53%;
+    --aqi-unhealthy: 0 84% 60%;
+    --aqi-very-unhealthy: 280 68% 40%;
+    --aqi-hazardous: 0 63% 31%;
+    --aqi-severe: 0 90% 40%;
+
+    --success: 142 76% 46%;
+    --success-foreground: 0 0% 100%;
+    --warning: 45 93% 47%;
+    --warning-foreground: 220 30% 10%;
+    --info: 200 70% 55%;
+    --info-foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border shadow-sm;
+  }
+  .aqi-good { background-color: hsl(var(--aqi-good)); }
+  .aqi-moderate { background-color: hsl(var(--aqi-moderate)); }
+  .aqi-unhealthy { background-color: hsl(var(--aqi-unhealthy)); }
+  .aqi-severe { background-color: hsl(var(--aqi-severe)); color: white; }
+  .aqi-very-unhealthy { background-color: hsl(var(--aqi-very-unhealthy)); color: white; }
+  .aqi-hazardous { background-color: hsl(var(--aqi-hazardous)); color: white; }
+}
