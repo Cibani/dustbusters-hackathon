@@ -36,6 +36,39 @@ users = {
 }
 
 # -----------------------
+# AQI Calculation (Indian PM2.5 based)
+# -----------------------
+
+def calculate_aqi_pm25(pm25):
+    if pm25 <= 30:
+        return 50
+    elif pm25 <= 60:
+        return 100
+    elif pm25 <= 90:
+        return 150
+    elif pm25 <= 120:
+        return 200
+    elif pm25 <= 250:
+        return 300
+    else:
+        return 400
+
+
+def determine_category(aqi):
+    if aqi <= 50:
+        return "Good"
+    elif aqi <= 100:
+        return "Satisfactory"
+    elif aqi <= 200:
+        return "Moderate"
+    elif aqi <= 300:
+        return "Poor"
+    elif aqi <= 400:
+        return "Very Poor"
+    else:
+        return "Severe"
+
+# -----------------------
 # LOGIN
 # -----------------------
 @app.route("/api/login", methods=["POST"])
@@ -75,7 +108,7 @@ def live_aqi():
     url = f"https://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}"
 
     try:
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, timeout=10)
 
         if response.status_code != 200:
             return jsonify({
@@ -84,21 +117,13 @@ def live_aqi():
             }), 500
 
         data = response.json()
-
         pollution = data["list"][0]
-        aqi_scale = pollution["main"]["aqi"]
         components = pollution["components"]
 
-        # Convert OpenWeather 1–5 scale to readable band
-        aqi_mapping = {
-            1: {"value": 50, "level": "Good"},
-            2: {"value": 100, "level": "Moderate"},
-            3: {"value": 200, "level": "Unhealthy"},
-            4: {"value": 300, "level": "Very Unhealthy"},
-            5: {"value": 400, "level": "Severe"}
-        }
+        pm25 = components.get("pm2_5", 0)
 
-        mapped = aqi_mapping.get(aqi_scale, {"value": 100, "level": "Unknown"})
+        aqi_value = calculate_aqi_pm25(pm25)
+        category = determine_category(aqi_value)
 
         return jsonify({
             "status": "success",
@@ -107,11 +132,11 @@ def live_aqi():
                 "lon": lon
             },
             "aqi": {
-                "value": mapped["value"],
-                "category": mapped["level"]
+                "value": aqi_value,
+                "category": category
             },
             "pollutants": {
-                "PM25": components.get("pm2_5", 0),
+                "PM25": pm25,
                 "PM10": components.get("pm10", 0),
                 "NO2": components.get("no2", 0),
                 "SO2": components.get("so2", 0),
@@ -127,6 +152,57 @@ def live_aqi():
             "message": str(e)
         }), 500
 
+# -----------------------
+# FORECAST
+# -----------------------
+@app.route("/api/forecast", methods=["GET"])
+@jwt_required()
+def forecast():
+
+    lat = request.args.get("lat", 28.6139)
+    lon = request.args.get("lon", 77.2090)
+
+    if not OPENWEATHER_API_KEY:
+        return jsonify({"error": "API key not configured"}), 500
+
+    url = f"https://api.openweathermap.org/data/2.5/air_pollution/forecast?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}"
+
+    try:
+        response = requests.get(url, timeout=10)
+
+        if response.status_code != 200:
+            return jsonify({
+                "status": "error",
+                "message": "Forecast API error"
+            }), 500
+
+        data = response.json()
+
+        forecast_list = []
+
+        for entry in data["list"][:8]:  # next 24 hours
+            components = entry["components"]
+            pm25 = components.get("pm2_5", 0)
+
+            forecast_list.append({
+                "timestamp": entry["dt"],
+                "pm25": pm25,
+                "pm10": components.get("pm10", 0),
+                "no2": components.get("no2", 0),
+                "aqi_value": calculate_aqi_pm25(pm25),
+                "category": determine_category(calculate_aqi_pm25(pm25))
+            })
+
+        return jsonify({
+            "status": "success",
+            "forecast": forecast_list
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 # -----------------------
 # RUN
