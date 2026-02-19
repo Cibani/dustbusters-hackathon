@@ -21,19 +21,53 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      setError("Please fill in all fields");
+  const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!email || !password) {
+    setError("Please fill in all fields");
+    return;
+  }
+
+  setError("");
+  setLoading(true);
+
+  try {
+    const response = await fetch("http://localhost:5000/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        role
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.message || "Login failed");
+      setLoading(false);
       return;
     }
-    setError("");
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigate(roleDefaults[role]);
-    }, 1500);
-  };
+
+    // Save token
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("role", data.role);
+
+    setLoading(false);
+
+    // Redirect based on backend role
+    navigate(roleDefaults[data.role]);
+
+  } catch (err) {
+    setError("Server error. Please try again.");
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
