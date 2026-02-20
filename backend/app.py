@@ -3,12 +3,13 @@ from flask_cors import CORS
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
-    jwt_required,
-    get_jwt
+    jwt_required
 )
 
 import os
 import requests
+import numpy as np
+import joblib
 from dotenv import load_dotenv
 
 # -----------------------
@@ -27,6 +28,18 @@ app.config["JWT_SECRET_KEY"] = "super-secret-key"
 jwt = JWTManager(app)
 
 # -----------------------
+# Load ML Model
+# -----------------------
+try:
+    source_model = joblib.load("aqi_source_model.pkl")
+    label_encoder = joblib.load("label_encoder.pkl")
+    print("✅ Source prediction model loaded successfully")
+except Exception as e:
+    print("⚠️ Could not load ML model:", e)
+    source_model = None
+    label_encoder = None
+
+# -----------------------
 # Dummy Users
 # -----------------------
 users = {
@@ -38,7 +51,6 @@ users = {
 # -----------------------
 # AQI Calculation (Indian PM2.5 based)
 # -----------------------
-
 def calculate_aqi_pm25(pm25):
     if pm25 <= 30:
         return 50
@@ -111,10 +123,7 @@ def live_aqi():
         response = requests.get(url, timeout=10)
 
         if response.status_code != 200:
-            return jsonify({
-                "status": "error",
-                "message": "OpenWeather API error"
-            }), 500
+            return jsonify({"status": "error", "message": "OpenWeather API error"}), 500
 
         data = response.json()
         pollution = data["list"][0]
@@ -127,10 +136,7 @@ def live_aqi():
 
         return jsonify({
             "status": "success",
-            "location": {
-                "lat": lat,
-                "lon": lon
-            },
+            "location": {"lat": lat, "lon": lon},
             "aqi": {
                 "value": aqi_value,
                 "category": category
@@ -147,10 +153,7 @@ def live_aqi():
         })
 
     except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # -----------------------
 # FORECAST
@@ -171,16 +174,13 @@ def forecast():
         response = requests.get(url, timeout=10)
 
         if response.status_code != 200:
-            return jsonify({
-                "status": "error",
-                "message": "Forecast API error"
-            }), 500
+            return jsonify({"status": "error", "message": "Forecast API error"}), 500
 
         data = response.json()
 
         forecast_list = []
 
-        for entry in data["list"][:8]:  # next 24 hours
+        for entry in data["list"][:8]:
             components = entry["components"]
             pm25 = components.get("pm2_5", 0)
 
@@ -199,10 +199,61 @@ def forecast():
         })
 
     except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# -----------------------
+# SOURCE IDENTIFICATION (ML)
+# -----------------------
+@app.route("/api/source-prediction", methods=["GET"])
+@jwt_required()
+def source_prediction():
+
+    lat = request.args.get("lat", 28.6139)
+    lon = request.args.get("lon", 77.2090)
+
+    if not OPENWEATHER_API_KEY:
+        return jsonify({"error": "API key not configured"}), 500
+
+    if source_model is None:
+        return jsonify({"error": "ML model not loaded"}), 500
+
+    try:
+        url = f"https://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}"
+        response = requests.get(url, timeout=10)
+
+        if response.status_code != 200:
+            return jsonify({"error": "OpenWeather API error"}), 500
+
+        data = response.json()
+        components = data["list"][0]["components"]
+
+        pm25 = components.get("pm2_5", 0)
+        pm10 = components.get("pm10", 0)
+        no2 = components.get("no2", 0)
+        so2 = components.get("so2", 0)
+        co = round(components.get("co", 0) / 1000, 2)
+        o3 = components.get("o3", 0)
+
+        features = np.array([[pm25, pm10, no2, so2, o3, co]])
+
+        prediction = source_model.predict(features)
+        predicted_label = label_encoder.inverse_transform(prediction)[0]
+
         return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
+            "status": "success",
+            "predicted_source": predicted_label,
+            "input_pollutants": {
+                "PM25": pm25,
+                "PM10": pm10,
+                "NO2": no2,
+                "SO2": so2,
+                "CO": co,
+                "O3": o3
+            }
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # -----------------------
 # RUN
