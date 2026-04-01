@@ -293,17 +293,25 @@ The database stores air quality data, weather data, traffic data, location data,
 
 # Future Enhancements
 
-* Mobile app for citizens
-* Real-time alerts
-* Health impact prediction
 * Integration with smart city systems
 * Nationwide deployment
 * Policy impact simulation engine
 
 ---
 
+
 # Conclusion
 
 This project provides an AI-driven decision-support system for pollution monitoring, forecasting, and policy planning. By integrating multi-source data, machine learning models, GIS mapping, and decision dashboards, the system helps government agencies move from reactive pollution monitoring to proactive pollution management and policy planning.
+
+---
+# Done BY: 
+
+* Anjelo Sherin
+* Aruna K
+* Cibani Joe A
+*Arathi Subash
+* Afrah A
+* Naziya Parveen
 
 
